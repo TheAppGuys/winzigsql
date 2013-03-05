@@ -20,12 +20,10 @@ WinzigSQL helps you with three areas of database handling under Android:
 The idea of WinzigSQL is to get to grips with it in 30 minutes. It is a typical 80:20 solution and aimed at people who prefer to do most of their 
 database tasks by hand. 
 
-##License##
+## License ##
 WinzigSQL is licensed under the 3-clause BSD license. For details see the `LICENSE` file that comes with the source.
 
-##Maven##
-Note: not uploaded to Maven Central yet, so this does not yet work:
-
+## Maven ##
     <dependency>
       <groupId>de.theappguys</groupId>
       <artifactId>winzigsql</artifactId>
@@ -188,7 +186,7 @@ members' state from a cursor. It only accesses the cursor by index, it never loo
 last bit of performance when reading data from cursors. 
 
    
-##Version History##
+## Version History ##
 
-###0.1###    
+### 0.1 ###    
 Initial Version

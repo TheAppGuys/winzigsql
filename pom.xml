@@ -1,11 +1,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.theappguys</groupId>
   <artifactId>winzigsql</artifactId>
   <packaging>jar</packaging>
   <version>0.1-SNAPSHOT</version>
   <name>winzigsql</name>
+  <description>WinzigSQL is a very tiny utility lib that is supposed to aid in the task of accessing a database under Android.</description>
   <url>https://github.com/TheAppGuys/winzigsql</url>
   <licenses>
     <license>
@@ -15,16 +21,38 @@
     </license>
   </licenses>
   <scm>
-    <url>https://github.com/TheAppGuys/winzigsql.git</url>
     <connection>scm:git:git://github.com/TheAppGuys/winzigsql.git</connection>
+    <developerConnection>scm:git:git://github.com/TheAppGuys/winzigsql.git</developerConnection>
+    <url>git@github.com:TheAppGuys/winzigsql.git</url>
   </scm>
   <developers>
-  <developer>
-    <id>chenkelmann</id>
-    <name>Christoph Henkelmann</name>
-    <url>http://henkelmann.eu/</url>
-  </developer>
+	<developer>
+	  <id>chenkelmann</id>
+	  <name>Christoph Henkelmann</name>
+	  <url>http://henkelmann.eu/</url>
+	</developer>
   </developers>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.4</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+            <configuration>
+              <keyname>8B179A6D</keyname>
+            </configuration>
+          </execution>
+        </executions>   
+      </plugin>
+    </plugins>
+  </build>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
