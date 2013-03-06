@@ -6,8 +6,12 @@ package de.theappguys.winzigsql;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.charset.Charset;
 
 import android.content.Context;
@@ -19,7 +23,8 @@ public class ResourceUtils {
 
     public static final Charset UTF_8 = Charset.forName("UTF-8");
 
-    public static final int BUFFER_SIZE = 2 * 1024;//read in 4K chunks (1 char == 2 byte)
+    public static final int CHAR_BUFFER_SIZE = 2 * 1024;//read in 4K chunks (1 char == 2 byte)
+    public static final int BYTE_BUFFER_SIZE = 2 * CHAR_BUFFER_SIZE;
 
 
 	private ResourceUtils(){}
@@ -66,14 +71,25 @@ public class ResourceUtils {
 	 * @throws IOException reading failed
 	 */
 	public static String readString(final Reader in) throws IOException {
-	    final StringBuilder result = new StringBuilder();
-        final char[] buffer = new char[BUFFER_SIZE];
+	    final StringWriter out = new StringWriter();
+	    copy(in, out);
+        return out.toString();
+	}
+
+	public static void copy(final Reader in, final Writer out) throws IOException {
+	    final char[] buffer = new char[CHAR_BUFFER_SIZE];
+	    int read = 0;
+	    while ((read = in.read(buffer)) != -1) {
+	        out.write(buffer, 0, read);
+	    }
+	}
+
+	public static void copy(final InputStream in, final OutputStream out) throws IOException {
+	    final byte[] buffer = new byte[BYTE_BUFFER_SIZE];
         int read = 0;
         while ((read = in.read(buffer)) != -1) {
-            result.append(buffer, 0, read);
+            out.write(buffer, 0, read);
         }
-
-        return result.toString();
 	}
 
 }

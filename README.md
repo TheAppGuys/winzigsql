@@ -14,7 +14,7 @@ efficient in doing so.
 WinzigSQL helps you with three areas of database handling under Android:
 
 * it has a primitive DSL to build Row-Mapping / DAO classes
-* it has an extended version of `SQLiteOpenHelper` that handles db creation and updates from SQL Files packed with the app following a naming convention.
+* it has extended versions of `SQLiteOpenHelper` that handle db creation and updates from SQL Files or raw databases packed with the app following a naming convention.
 * it has a wrapper class that allows to create a `ContentProvider` from a db in a few lines, thus making databases easy to use with `Loader<Cursor>` which in turn makes it very easy to fill Activities / Fragments asynchronously with data from a database
 
 The idea of WinzigSQL is to get to grips with it in 30 minutes. It is a typical 80:20 solution and aimed at people who prefer to do most of their 
@@ -99,11 +99,11 @@ boilerplate. With WinzigSQL, you do it like this:
 
         @Override
         protected SQLiteOpenHelper createDb(final Context context) {
-            return new WinzigDbHelper(context, "your_db_name", YOUR_DB_VERSION);
+            return new WinzigDbScriptHelper(context, "your_db_name", YOUR_DB_VERSION);
         }
     }
 
-That's it. Note that you can also use an ordinary `SQLiteOpenHelper` here, there is no need to use a `WinzigDbHelper`. So if you want 
+That's it. Note that you can also use an ordinary `SQLiteOpenHelper` here, there is no need to use a `WinzigDbScriptHelper`. So if you want 
 your own db creation & update code, you can just implement your `SQLiteOpenHelper` the old fashioned way by hand.
 
 Now you need to register your db provider in the manifest. *NOTE THAT THIS PROVIDER GIVES FULL ACCESS TO YOUR DB, SO YOU ALMOST CERTAINLY 
@@ -124,7 +124,7 @@ DO NOT WANT TO MAKE IT AVAILABLE FOR OTHER APPS!* To register your provider, add
     </manifest>
 
 ## The WinzigDbHelper ##
-As mentioned above, the `WinzigDbHelper` expects a setup script for the complete database in the resources. 
+As mentioned above, the `WinzigDbScriptHelper` expects a setup script for the complete database in the resources. 
 WinzigSQL has an SQL "Parser" (a hack, really) that allows for parsing of SQL files that follow the following rules:
 
 * all statements are terminated by a semicolon `;`
@@ -141,7 +141,7 @@ it into the assets instead of putting it into string constants or string resourc
 
 This makes handling, creation & testing of the statements *a lot* easier.
 
-The `WinzigDbHelper` also follows conventions when it comes to updating your database. For each version `n` it expects
+The `WinzigDbScriptHelper` also follows conventions when it comes to updating your database. For each version `n` it expects
 a file `assets/sql/upgrade_db_[n].sql`.
 
 So if the db on the device has version 2 and an update of your app uses version 4, the `WinzigDbHelper` will look for and 

@@ -18,9 +18,9 @@ import android.util.Log;
  *
  * Works hand-in-hand with the WinzigDbProvider
  */
-public class WinzigDbHelper extends SQLiteOpenHelper {
+public class WinzigDbScriptHelper extends SQLiteOpenHelper {
 
-    public static final String LOG_TAG = "winzigsql";
+    public static final String LOG_TAG = "WinzigSQL";
 
 	private final Context context;
 
@@ -48,12 +48,12 @@ public class WinzigDbHelper extends SQLiteOpenHelper {
 	 * </code></pre>
 	 *
 	 */
-	public WinzigDbHelper(final Context context, final String dbName, final int dbVersion) {
+	public WinzigDbScriptHelper(final Context context, final String dbName, final int dbVersion) {
 		super(context, dbName, null, dbVersion);
 		//TODO: use constructor with error handler with last argument
 		//final DatabaseErrorHandler errorHandler
 		this.dbName = dbName;
-		this.context = context;
+		this.context = context.getApplicationContext();
 	}
 
 	/** (non-Javadoc)

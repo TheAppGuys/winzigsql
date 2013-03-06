@@ -62,6 +62,7 @@ public abstract class Cruddable implements Serializable {
 			Cruddable.this.values.add(this);
 		}
 
+		public String getFieldName() {return dbFieldName;}
 		public abstract void set(final T t);
 		public abstract T    get();
 		public abstract boolean isNullable();
@@ -737,11 +738,6 @@ public abstract class Cruddable implements Serializable {
 	 */
 	@Override
 	public String toString() {
-	    final StringBuilder result =
-	            new StringBuilder(getClass().getSimpleName()).append("{");
-
-		TextUtils.join(", ", values);
-
-		return result.append("}").toString();
+	    return getClass().getSimpleName() + "{" + TextUtils.join(", ", values) + "}";
 	}
 }
