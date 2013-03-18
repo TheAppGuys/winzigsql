@@ -68,7 +68,8 @@ public class WinzigDbFileHelper extends SQLiteOpenHelper {
 		//final DatabaseErrorHandler errorHandler
 		this.dbName = dbName;
 		this.context = context.getApplicationContext();
-		this.dbFile = new File("/data/data/" + context.getPackageName() + "/databases/" + dbName);
+		// this.dbFile = new File("/data/data/" + context.getPackageName() + "/databases/" + dbName);
+		this.dbFile = context.getDatabasePath(dbName);
 	}
 
 	@Override
@@ -117,6 +118,9 @@ public class WinzigDbFileHelper extends SQLiteOpenHelper {
 	    try {
     	    final InputStream in = context.getAssets().open(assetName);
     	    try {
+    	    	if ( !dbFile.getParentFile().exists())
+    	    		dbFile.getParentFile().mkdirs();
+    	    	
     	        final OutputStream out = new FileOutputStream(dbFile);
     	        try {
     	            ResourceUtils.copy(in, out);
@@ -146,5 +150,9 @@ public class WinzigDbFileHelper extends SQLiteOpenHelper {
 	 */
 	public boolean dropDb() {
 		return context.deleteDatabase(dbName);
+	}
+
+	protected Context getContext() {
+		return context;
 	}
 }

@@ -1,5 +1,7 @@
 package de.theappguys.winzigsql;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import android.content.ContentProvider;
@@ -12,57 +14,59 @@ import android.net.Uri;
 
 /**
  * Class that generically wraps any SQLiteOpenHelper into a provider.
- *
- * uris are assumed to be of the form:
- * content://[authority]/[table]
- *
+ * 
+ * uris are assumed to be of the form: content://[authority]/[table]
+ * 
  * As this provider allows direct, raw access to the underlying sqlite it is
  * *not* a good idea to make it available to other apps publicly!
  */
 public abstract class WinzigDbProvider extends ContentProvider {
 
 	private final String authority;
-	//set when onCreate is called
+	// set when onCreate is called
 	private SQLiteOpenHelper db;
 	private final Uri baseUri;
 
 	private class UriParseResult {
 		final String tables;
-		final Long   id;
+		final Long id;
 
 		public UriParseResult(final Uri uri) {
-			//uri formats:
-			//content://[authority]  for general queries
-			//content://[authority]/[tables] for table specific queries
-			//content://[authority]/[table]/[id] for entity specific queries
+			// uri formats:
+			// content://[authority] for general queries
+			// content://[authority]/[tables] for table specific queries
+			// content://[authority]/[table]/[id] for entity specific queries
 
-			//check if authority matches
+			// check if authority matches
 			if (!authority.equals(uri.getEncodedAuthority())) {
-				throw new IllegalArgumentException("Expected authority: '" +
-			        authority + "' got '" + uri.getEncodedAuthority() + "'.");
+				throw new IllegalArgumentException("Expected authority: '"
+						+ authority + "' got '" + uri.getEncodedAuthority()
+						+ "'.");
 			}
-			//parse path
+			// parse path
 			final List<String> pathSegments = uri.getPathSegments();
-			//we need at least the database
-			/*if (pathSegments == null || pathSegments.isEmpty()) {
-				throw new IllegalArgumentException(
-						"No db part int uri: '" + uri.toString() + "'.");
-			}*/
-			//we can only have up to three path arguments ([db_name]/[table]/[id])
+			// we need at least the database
+			/*
+			 * if (pathSegments == null || pathSegments.isEmpty()) { throw new
+			 * IllegalArgumentException( "No db part int uri: '" +
+			 * uri.toString() + "'."); }
+			 */
+			// we can only have up to three path arguments
+			// ([db_name]/[table]/[id])
 			if (pathSegments.size() > 2) {
 				throw new IllegalArgumentException("Uri path to long: '" + uri);
 			}
 
-			//little bobby tables, we call him.
+			// little bobby tables, we call him.
 			tables = !pathSegments.isEmpty() ? pathSegments.get(0) : "";
 
-			//we have an id elements, make sure it is a valid long
+			// we have an id elements, make sure it is a valid long
 			if (pathSegments.size() == 2) {
 				try {
 					id = Long.parseLong(pathSegments.get(1));
 				} catch (final Exception e) {
-					throw new IllegalArgumentException(
-							"Not a valid id: " + pathSegments.get(1), e);
+					throw new IllegalArgumentException("Not a valid id: "
+							+ pathSegments.get(1), e);
 				}
 			} else {
 				id = null;
@@ -71,12 +75,13 @@ public abstract class WinzigDbProvider extends ContentProvider {
 	}
 
 	public static Uri createBaseUri(final String authority) {
-	    return UriUtils.contentUri(authority);
+		return UriUtils.contentUri(authority);
 	}
 
 	/**
-	 * @param authority the first part of the content url of this provider,
-	 * should be the namespace of the app
+	 * @param authority
+	 *            the first part of the content url of this provider, should be
+	 *            the namespace of the app
 	 */
 	public WinzigDbProvider(final String authority) {
 		super();
@@ -101,39 +106,51 @@ public abstract class WinzigDbProvider extends ContentProvider {
 	}
 
 	@Override
-	public Cursor query(final Uri uri, final String[] projection,
-			            final String selection, final String[] selectionArgs,
-			            final String sortOrder) {
+	public Cursor query(final Uri uri, String[] projection,
+			final String selection, final String[] selectionArgs,
+			final String sortOrder) {
 		final UriParseResult parsedUri = new UriParseResult(uri);
-		//our resulting cursor
+		// our resulting cursor
 		final Cursor cursor;
-		//check if we have a raw query
+		// check if we have a raw query
 		if ("".equals(parsedUri.tables)) {
-			//if tables aren't specified, we just execute a raw select.
-			cursor = db.getReadableDatabase().rawQuery(selection, selectionArgs);
-		} else if (parsedUri.id != null) {//query for a single entity
+			// if tables aren't specified, we just execute a raw select.
+			cursor = db.getReadableDatabase()
+					.rawQuery(selection, selectionArgs);
+		} else if (parsedUri.id != null) {// query for a single entity
 			final SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();
 			queryBuilder.setTables(parsedUri.tables);
-			cursor = queryBuilder.query(
-					   db.getReadableDatabase(),
-			           projection,
-			           "_id = " + parsedUri.id,
-			           selectionArgs, null, null, sortOrder);
-	    } else {
+			cursor = queryBuilder.query(db.getReadableDatabase(), projection,
+					"_id = " + parsedUri.id, selectionArgs, null, null,
+					sortOrder);
+		} else {
 			// Assemble query based on url
 			final SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();
 			// Set the table(s)
 			queryBuilder.setTables(parsedUri.tables);
-			cursor = queryBuilder.query(
-					           db.getReadableDatabase(),
-					           projection,
-					           selection,
-					           selectionArgs, null, null, sortOrder);
+
+			// feature addition by Thorsten:
+			// first projection parameter may be DISTINCT, remove it and set the
+			// distinct flag
+			if (projection[0].equalsIgnoreCase("DISTINCT")) {
+				queryBuilder.setDistinct(true);
+				if ( projection.length > 1){
+					ArrayList<String> pL = new ArrayList<String>(projection.length);
+					pL.addAll( Arrays.asList(projection));
+					pL.remove(0);
+					projection = pL.toArray(new String[pL.size()]);
+				}
+				else 
+					projection = null;
+			}
+
+			cursor = queryBuilder.query(db.getReadableDatabase(), projection,
+					selection, selectionArgs, null, null, sortOrder);
 		}
 
-	    // Make sure that potential listeners are getting notified
-	    cursor.setNotificationUri(getContext().getContentResolver(), uri);
-	    return cursor;
+		// Make sure that potential listeners are getting notified
+		cursor.setNotificationUri(getContext().getContentResolver(), uri);
+		return cursor;
 	}
 
 	@Override
@@ -142,15 +159,18 @@ public abstract class WinzigDbProvider extends ContentProvider {
 
 		if ("".equals(parsedUri.tables)) {
 			throw new IllegalArgumentException(
-			    "Cannot insert, no table provided: '" + uri.toString() + "'");
+					"Cannot insert, no table provided: '" + uri.toString()
+							+ "'");
 		}
 
 		if (parsedUri.id != null) {
 			throw new IllegalArgumentException(
-			    "Cannot insert, insert uri contains id: '" + uri.toString() + "'");
+					"Cannot insert, insert uri contains id: '" + uri.toString()
+							+ "'");
 		}
 
-		final long id = db.getWritableDatabase().insert(parsedUri.tables, null, values);
+		final long id = db.getWritableDatabase().insert(parsedUri.tables, null,
+				values);
 
 		getContext().getContentResolver().notifyChange(uri, null);
 
@@ -159,25 +179,22 @@ public abstract class WinzigDbProvider extends ContentProvider {
 
 	@Override
 	public int delete(final Uri uri, final String selection,
-			          final String[] selectionArgs) {
+			final String[] selectionArgs) {
 		final UriParseResult parsedUri = new UriParseResult(uri);
 
 		if ("".equals(parsedUri.tables)) {
 			throw new IllegalArgumentException(
-			    "Cannot delete, no table provided: '" + uri.toString() + "'");
+					"Cannot delete, no table provided: '" + uri.toString()
+							+ "'");
 		}
 
 		final int count;
 		if (parsedUri.id != null) {
-			count = db.getWritableDatabase().delete(
-					parsedUri.tables,
-					"_id = ?",
-					new String[]{Long.toString(parsedUri.id)});
+			count = db.getWritableDatabase().delete(parsedUri.tables,
+					"_id = ?", new String[] { Long.toString(parsedUri.id) });
 		} else {
-			count = db.getWritableDatabase().delete(
-					parsedUri.tables,
-					selection,
-					selectionArgs);
+			count = db.getWritableDatabase().delete(parsedUri.tables,
+					selection, selectionArgs);
 		}
 
 		getContext().getContentResolver().notifyChange(uri, null);
@@ -187,39 +204,34 @@ public abstract class WinzigDbProvider extends ContentProvider {
 
 	@Override
 	public int update(final Uri uri, final ContentValues values,
-			          final String selection, final String[] selectionArgs) {
+			final String selection, final String[] selectionArgs) {
 		final UriParseResult parsedUri = new UriParseResult(uri);
 
 		if ("".equals(parsedUri.tables)) {
 			throw new IllegalArgumentException(
-			    "Cannot update, no table provided: '" + uri.toString() + "'");
+					"Cannot update, no table provided: '" + uri.toString()
+							+ "'");
 		}
 
 		final int count;
-		//we have an update of a single entity
+		// we have an update of a single entity
 		if (parsedUri.id != null) {
-			count = db.getWritableDatabase().update(
-					parsedUri.tables,
-					values,
-					"_id = ?",
-					new String[]{Long.toString(parsedUri.id)});
-	    } else {//generic update
-	    	count = db.getWritableDatabase().update(
-					parsedUri.tables,
-					values,
-					selection,
-					selectionArgs);
+			count = db.getWritableDatabase().update(parsedUri.tables, values,
+					"_id = ?", new String[] { Long.toString(parsedUri.id) });
+		} else {// generic update
+			count = db.getWritableDatabase().update(parsedUri.tables, values,
+					selection, selectionArgs);
 		}
 
 		getContext().getContentResolver().notifyChange(uri, null);
 
-	    return count;
+		return count;
 	}
 
 	@Override
 	public String getType(final Uri uri) {
-		//null signals that there is no appropriate mime type
-		//(which makes sense for generic db query results)
+		// null signals that there is no appropriate mime type
+		// (which makes sense for generic db query results)
 		return null;
 	}
 }
