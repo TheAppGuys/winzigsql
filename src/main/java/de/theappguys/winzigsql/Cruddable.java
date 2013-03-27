@@ -11,6 +11,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Base64;
 
 /**
  * Base class for simple domain objects that allow CRUD operations via a
@@ -64,6 +65,11 @@ public abstract class Cruddable implements Serializable {
 
 		public String getFieldName() {return dbFieldName;}
 		public abstract void set(final T t);
+		/** Sets the value of this field as a String. The instance tries to
+		 * parse the String and set the resulting value. If that fails,
+		 * a runtime exception is thrown
+		 */
+		public abstract void parse(final String s);
 		public abstract T    get();
 		public abstract boolean isNullable();
 		public abstract boolean isNull();
@@ -171,6 +177,18 @@ public abstract class Cruddable implements Serializable {
 		public boolean getBoolean() {return t;}
 		@Override
 		public void set(final Boolean t) {this.t = t;}
+		@Override
+		public void parse(final String s) {
+		    final String lower = s.toLowerCase();
+		    if ("true".equals(lower) || "1".equals(lower)) {
+		        this.t = true;
+		    } else if ("false".equals(lower) || "0".equals(lower)) {
+		        this.t = false;
+		    } else {
+		        throw new IllegalArgumentException("Not a valid boolean literal: '" + s + "', must be 'true', 'false', '0' or '1' (case-insensitive).");
+		    }
+		}
+
 		public void setBoolean(final boolean t) {this.t = t;}
 		@Override
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.getInt(offset + index) != 0;}
@@ -185,6 +203,9 @@ public abstract class Cruddable implements Serializable {
 		public short getShort() {return t;}
 		@Override
 		public void set(final Short t) {this.t = t;}
+		@Override
+		public void parse(final String s) {this.t = Short.parseShort(s);}
+
 		public void setShort(final short t) {this.t = t;}
 		@Override
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.getShort(offset + index);}
@@ -199,6 +220,9 @@ public abstract class Cruddable implements Serializable {
 		public int getInt() {return t;}
 		@Override
 		public void set(final Integer t) {this.t = t;}
+		@Override
+		public void parse(final String s) {this.t = Integer.parseInt(s);}
+
 		public void setInt(final int t) {this.t = t;}
 		@Override
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.getInt(offset + index);}
@@ -213,6 +237,9 @@ public abstract class Cruddable implements Serializable {
 		public long getLong() {return t;}
 		@Override
 		public void set(final Long t) {this.t = t;}
+		@Override
+        public void parse(final String s) {this.t = Long.parseLong(s);}
+
 		public void setLong(final long t) {this.t = t;}
 		@Override
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.getLong(offset + index);}
@@ -230,6 +257,8 @@ public abstract class Cruddable implements Serializable {
 		}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t);}
+		@Override
+		public void parse(final String s) {set(s);}
 	}
 	public class CrudFloat extends CrudNotNullableValue<Float> {
 		private float t = 0.0f;
@@ -239,6 +268,9 @@ public abstract class Cruddable implements Serializable {
 		public float getFloat() {return t;}
 		@Override
 		public void set(final Float t) {this.t = t;}
+		@Override
+        public void parse(final String s) {this.t = Float.parseFloat(s);}
+
 		public void setFloat(final float t) {this.t = t;}
 		@Override
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.getFloat(offset + index); }
@@ -253,6 +285,9 @@ public abstract class Cruddable implements Serializable {
 		public double getDouble() {return t;}
 		@Override
 		public void set(final Double t) {this.t = t;}
+		@Override
+        public void parse(final String s) {this.t = Double.parseDouble(s);}
+
 		public void setDouble(final double t) {this.t = t;}
 		@Override
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.getDouble(offset + index); }
@@ -270,6 +305,8 @@ public abstract class Cruddable implements Serializable {
 		}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t);}
+		@Override
+		public void parse(final String s) {this.t = Base64.decode(s, Base64.DEFAULT);}
 	}
 	public class CrudDate extends CrudNotNullableObjectValue<Date> {
 		public CrudDate(final String dbFieldName) {super(dbFieldName); t = new Date();}
@@ -282,6 +319,8 @@ public abstract class Cruddable implements Serializable {
 		}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t.getTime());}
+		@Override
+		public void parse(final String s) {throw new NoSuchMethodError("TODO: proper iso ISO8601 date parsing not implemented.");}
 	}
 	public class CrudEnum<T extends Enum<T>> extends CrudNotNullableObjectValue<T> {
 		private final Class<T> clazz;
@@ -299,6 +338,8 @@ public abstract class Cruddable implements Serializable {
 		}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t.name());}
+		@Override
+		public void parse(final String s) {this.t = Enum.valueOf(clazz, s);}
 	}
 
 	/////////////////////////////// nullable classes ///////////////////////////
@@ -308,6 +349,22 @@ public abstract class Cruddable implements Serializable {
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.isNull(offset + index) ? null : cursor.getInt(offset + index) != 0;}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t == null ? null : (t ? 1 : 0));}
+		@Override
+        public void parse(final String s) {
+            if (s == null) {
+                this.t = null;
+                return;
+            }
+
+		    final String lower = s.toLowerCase();
+            if ("true".equals(lower) || "1".equals(lower)) {
+                this.t = true;
+            } else if ("false".equals(lower) || "0".equals(lower)) {
+                this.t = false;
+            } else {
+                throw new IllegalArgumentException("Not a valid boolean literal: '" + s + "', must be 'true', 'false', '0' or '1' (case-insensitive).");
+            }
+        }
 	}
 	public class CrudNullableShort extends CrudNullableValue<Short> {
 		public CrudNullableShort(final String dbFieldName) {super(dbFieldName);}
@@ -315,6 +372,11 @@ public abstract class Cruddable implements Serializable {
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.isNull(offset + index) ? null : cursor.getShort(offset + index);}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t);}
+		@Override
+        public void parse(final String s) {
+            if (s == null) this.t = null;
+            else           this.t = Short.parseShort(s);
+        }
 	}
 	public class CrudNullableInteger extends CrudNullableValue<Integer> {
 		public CrudNullableInteger(final String dbFieldName) {super(dbFieldName);}
@@ -322,6 +384,11 @@ public abstract class Cruddable implements Serializable {
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.isNull(offset + index) ? null : cursor.getInt(offset + index);}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t);}
+		@Override
+        public void parse(final String s) {
+            if (s == null) this.t = null;
+            else           this.t = Integer.parseInt(s);
+        }
 	}
 	public class CrudNullableLong extends CrudNullableValue<Long> {
 		public CrudNullableLong(final String dbFieldName) {super(dbFieldName);}
@@ -329,6 +396,11 @@ public abstract class Cruddable implements Serializable {
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.isNull(offset + index) ? null : cursor.getLong(offset + index);}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t);}
+		@Override
+        public void parse(final String s) {
+            if (s == null) this.t = null;
+            else           this.t = Long.parseLong(s);
+        }
 	}
 	public class CrudNullableString extends CrudNullableValue<String> {
 		public CrudNullableString(final String dbFieldName) {super(dbFieldName);}
@@ -336,6 +408,11 @@ public abstract class Cruddable implements Serializable {
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.isNull(offset + index) ? null : cursor.getString(offset + index); }
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t);}
+		@Override
+        public void parse(final String s) {
+            if (s == null) this.t = null;
+            else           this.t = s;
+        }
 	}
 	public class CrudNullableFloat extends CrudNullableValue<Float> {
 		public CrudNullableFloat(final String dbFieldName) {super(dbFieldName);}
@@ -343,6 +420,11 @@ public abstract class Cruddable implements Serializable {
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.isNull(offset + index) ? null : cursor.getFloat(offset + index); }
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t);}
+		@Override
+        public void parse(final String s) {
+            if (s == null) this.t = null;
+            else           this.t = Float.parseFloat(s);
+        }
 	}
 	public class CrudNullableDouble extends CrudNullableValue<Double> {
 		public CrudNullableDouble(final String dbFieldName) {super(dbFieldName);}
@@ -350,6 +432,11 @@ public abstract class Cruddable implements Serializable {
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.isNull(offset + index) ? null : cursor.getDouble(offset + index); }
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t);}
+		@Override
+        public void parse(final String s) {
+            if (s == null) this.t = null;
+            else           this.t = Double.parseDouble(s);
+        }
 	}
 	public class CrudNullableBlob extends CrudNullableValue<byte[]> {
 		public CrudNullableBlob(final String dbFieldName) {super(dbFieldName);}
@@ -357,6 +444,11 @@ public abstract class Cruddable implements Serializable {
 		protected void fromCursor(final int offset, final Cursor cursor) { t = cursor.isNull(offset + index) ? null : cursor.getBlob(offset + index);}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t);}
+		@Override
+        public void parse(final String s) {
+            if (s == null) this.t = null;
+            else           this.t = Base64.decode(s, Base64.DEFAULT);
+        }
 	}
 	public class CrudNullableDate extends CrudNullableValue<Date> {
 		public CrudNullableDate(final String dbFieldName) {super(dbFieldName);}
@@ -364,6 +456,10 @@ public abstract class Cruddable implements Serializable {
 		protected void fromCursor(final int offset, final Cursor cursor) {t = cursor.isNull(offset + index) ? null : new Date(cursor.getLong(offset + index));}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t == null ? null : t.getTime());}
+		@Override
+        public void parse(final String s) {
+		    throw new NoSuchMethodError("TODO: proper iso ISO8601 date parsing not implemented.");
+        }
 	}
 	public class CrudNullableEnum<T extends Enum<T>> extends CrudNullableValue<T> {
 		private final Class<T> clazz;
@@ -372,6 +468,11 @@ public abstract class Cruddable implements Serializable {
 		protected void fromCursor(final int offset, final Cursor cursor) {t = cursor.isNull(offset + index) ? null : Enum.valueOf(clazz, cursor.getString(offset + index));}
 		@Override
 		protected void addToContentValues(final ContentValues values) {values.put(dbFieldName, t == null ? null : t.name());}
+		@Override
+        public void parse(final String s) {
+            if (s == null) this.t = null;
+            else           this.t = Enum.valueOf(clazz, s);
+        }
 	}
 
 	/**
