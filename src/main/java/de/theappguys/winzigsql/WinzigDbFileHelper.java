@@ -68,7 +68,7 @@ public class WinzigDbFileHelper extends SQLiteOpenHelper {
 		//final DatabaseErrorHandler errorHandler
 		this.dbName = dbName;
 		this.context = context.getApplicationContext();
-		this.dbFile = new File("/data/data/" + context.getPackageName() + "/databases/" + dbName);
+		this.dbFile = context.getDatabasePath(dbName);
 	}
 
 	@Override
@@ -112,7 +112,7 @@ public class WinzigDbFileHelper extends SQLiteOpenHelper {
 	 * @throws IOException
 	 */
 	protected void copyDb() {
-	    final String assetName = dbName + ".db";
+	    final String assetName = dbName + ".sqlite";
 	    Log.d(LOG_TAG, "Copying db '" + assetName + "'");
 	    try {
     	    final InputStream in = context.getAssets().open(assetName);
