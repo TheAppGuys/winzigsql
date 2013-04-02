@@ -113,6 +113,7 @@ public class WinzigDbFileHelper extends SQLiteOpenHelper {
 	 */
 	protected void copyDb() {
 	    final String assetName = dbName + ".sqlite";
+	    dbFile.getParentFile().mkdirs();
 	    Log.d(LOG_TAG, "Copying db '" + assetName + "'");
 	    try {
     	    final InputStream in = context.getAssets().open(assetName);
@@ -127,9 +128,10 @@ public class WinzigDbFileHelper extends SQLiteOpenHelper {
     	        in.close();
     	    }
 	    } catch (final IOException e) {
+	        Log.e("winzigsql", "Could not copy db '" + dbName + "' from asset '" + assetName + "' to file '" + dbFile + "'", e);
 	        throw new SQLiteException(
 	                "Could not copy db '" + dbName + "' from asset '" +
-	                assetName + "' to file '" + dbFile + "'.");
+	                assetName + "' to file '" + dbFile + "', " + e.getMessage());
 	    }
 	}
 
