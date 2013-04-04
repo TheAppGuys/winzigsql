@@ -9,7 +9,7 @@
   <groupId>de.theappguys</groupId>
   <artifactId>winzigsql</artifactId>
   <packaging>jar</packaging>
-  <version>0.1-SNAPSHOT</version>
+  <version>1.0</version>
   <name>winzigsql</name>
   <description>WinzigSQL is a very tiny utility lib that is supposed to aid in the task of accessing a database under Android.</description>
   <url>https://github.com/TheAppGuys/winzigsql</url>

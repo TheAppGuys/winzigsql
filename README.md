@@ -18,7 +18,7 @@ WinzigSQL helps you with three areas of database handling under Android:
 * it has a wrapper class that allows to create a `ContentProvider` from a db in a few lines, thus making databases easy to use with `Loader<Cursor>` which in turn makes it very easy to fill Activities / Fragments asynchronously with data from a database
 
 The idea of WinzigSQL is to get to grips with it in 30 minutes. It is a typical 80:20 solution and aimed at people who prefer to do most of their 
-database tasks by hand. 
+database tasks by hand and don't mind writing SQL (or rather: who prefer to write their own SQL). 
 
 ## License ##
 WinzigSQL is licensed under the 3-clause BSD license. For details see the `LICENSE` file that comes with the source.
@@ -27,14 +27,14 @@ WinzigSQL is licensed under the 3-clause BSD license. For details see the `LICEN
     <dependency>
       <groupId>de.theappguys</groupId>
       <artifactId>winzigsql</artifactId>
-      <version>0.1-SNAPSHOT</version>      
+      <version>1.0</version>      
     </dependency>
 
 ## Basic Usage ##
 This is a quick tutorial that shows all of WinzigSQL's major features. you can use each of them separately, but they are designed to work hand-in-hand.
 
 WinzigSQL does not create any table statements etc. for you, so the first step is to provide the SQL files necessary to set up your database.
-The table creation statements are always executed from the file: `res/raw/create_db.sql`. Lets fill it with some dummy tables: 
+The table creation statements are always executed from the file: `res/raw/create_db.sql`. (or, based on the current locale, from another raw folder) Lets fill it with some dummy tables: 
 
     --Table for foos
     CREATE TABLE foo (
@@ -80,12 +80,12 @@ To access your table, you can create quick mapping classes like so:
 
 Note that there is no builtin mechanism to handle foreign keys, 1-n, m-n mappings etc. This is totally up to you. 
 This is intended, as in all frameworks we encountered so far we found the mechanisms for working automatically with 
-these mappings were more complicated than the just doing a manual select & mapping.
+these mappings were more complicated than the just doing a manual select with a join & mapping.
 
 ## Usage with content providers ##
 The main reason we created WinzigSQL was to make using loaders easier. If your db gets a bit more complex and you have more than a few 
 rows in your tables, queries may take some time. It is a big no-no to do your database handling on the UI thread. So the best solution 
-is to fill your views with data from the db using a `Loader<Cursor>`. Regrettably, there is no quick way to do this in Android. In order
+is to fill your views with data from the db using a `Loader<Cursor>`. Regrettably, there is no quick way to do this in Android out of the box. In order
 to use `Loader`s, you need  `ContentProvider`s. Creating your own `ContentProvider` with basic CRUD support requires an annoying amount of 
 boilerplate. With WinzigSQL, you do it like this: 
 
@@ -94,7 +94,7 @@ boilerplate. With WinzigSQL, you do it like this:
     public class YourDbProvider extends WinzigDbProvider {
 
         public YourDbProvider() {
-            super("your.namespace");
+            super("namespace.for.your.provider");
         }
 
         @Override
@@ -142,7 +142,7 @@ it into the assets instead of putting it into string constants or string resourc
 This makes handling, creation & testing of the statements *a lot* easier.
 
 The `WinzigDbScriptHelper` also follows conventions when it comes to updating your database. For each version `n` it expects
-a file `assets/sql/upgrade_db_[n].sql`.
+a file `res/raw/upgrade_db_[n].sql`.
 
 So if the db on the device has version 2 and an update of your app uses version 4, the `WinzigDbHelper` will look for and 
 execute the following scripts: 
@@ -172,7 +172,8 @@ publicly available.
 Now you need to add the provider to your app's manifest (see tutorial above).
 
 After doing that, your db is available wrapped by a provider to your UI code and you 
-can quickly populate your UI asynchronously with a Loader.
+can quickly populate your UI asynchronously with a Loader. Check the `WinzigDbProvider`'s JavaDoc for ways of querying it.
+You can execute simple selects by id without sql just by using the proper uri, or you can perform arbitrary custom SQL.
 
     
 ## The Cruddable ##
@@ -188,5 +189,8 @@ last bit of performance when reading data from cursors.
    
 ## Version History ##
 
-### 0.1 ###    
+### 1.0 
+stable release version
+
+### 0.1     
 Initial Version
